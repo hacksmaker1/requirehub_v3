@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RequireHub</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-deep:    #060810;
+    --border:     rgba(255,255,255,0.08);
+    --border-glow:rgba(0,168,255,0.35);
+    --accent:     #00a8ff;
+    --accent2:    #7b5fff;
+    --accent-grad:linear-gradient(135deg,#00a8ff,#7b5fff);
+    --text:       #e8eaf0;
+    --text-muted: #6b7280;
+    --text-dim:   #4b5563;
+    --success:    #22c55e;
+    --radius-sm:  10px;
+    --radius-md:  16px;
+    --radius-lg:  22px;
+    --ease:       cubic-bezier(0.23,1,0.32,1);
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+body::before {
+    content:'';
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+        radial-gradient(ellipse 80% 60% at 10% 10%, rgba(0,168,255,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 80%, rgba(123,95,255,0.12) 0%, transparent 55%);
+    animation: meshMove 12s ease-in-out infinite alternate;
+}
+@keyframes meshMove {
+    0%   { transform:scale(1); }
+    100% { transform:scale(1.05) translate(1%,1%); }
+}
+
+/* SIDEBAR */
+.sidebar {
+    position:fixed; left:0; top:0; width:240px; height:100vh;
+    background: #080a10;
+    border-right: 1px solid var(--border);
+    padding: 28px 16px;
+    display: none; z-index:10;
+}
+.logo {
+    font-size: 22px; font-weight: 700;
+    background: var(--accent-grad);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 32px; padding: 0 10px; display:block;
+}
+.navBtn {
+    width:100%; background: transparent; border: 1px solid transparent;
+    color: var(--text-muted); padding: 12px 14px; border-radius: var(--radius-sm);
+    margin-top: 6px; cursor: pointer; text-align: left; font-size: 14px;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 500;
+    transition: all 0.22s var(--ease);
+}
+.navBtn:hover { color: var(--text); border-color: var(--border); background: rgba(255,255,255,0.04); transform: translateX(3px); }
+.navBtn.active { color: var(--accent); border-color: var(--border-glow); background: rgba(0,168,255,0.08); }
+
+/* MAIN */
+.main { margin-left:0; padding:30px; transition:0.4s var(--ease); position:relative; z-index:1; }
+
+/* LOGIN BOX */
+.loginBox {
+    width: 440px;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 36px 32px;
+    margin: auto; margin-top: 70px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+    animation: fadeUp 0.5s var(--ease) both;
+}
+.loginBox .logo { font-size: 26px; margin-bottom: 24px; }
+@keyframes fadeUp {
+    from { opacity:0; transform:translateY(24px); }
+    to   { opacity:1; transform:translateY(0); }
+}
+
+/* PFP PICKER (signup) */
+.pfpPickerLabel {
+    font-size: 11px; color: var(--text-muted); letter-spacing: 0.8px;
+    text-transform: uppercase; margin-top: 16px; margin-bottom: 10px; display: block;
+}
+.pfpGrid {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 4px;
+}
+.pfpOption {
+    width: 100%; aspect-ratio: 1;
+    background: rgba(255,255,255,0.04);
+    border: 2px solid var(--border);
+    border-radius: 12px; font-size: 22px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s var(--ease);
+    padding: 0; margin: 0;
+}
+.pfpOption:hover { background: rgba(0,168,255,0.08); border-color: rgba(0,168,255,0.3); transform: scale(1.1); }
+.pfpOption.selected { background: rgba(0,168,255,0.15); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,168,255,0.2); transform: scale(1.1); }
+
+/* PANEL */
+.panel { display:none; margin-left:270px; padding:30px; position:relative; z-index:1; }
+
+/* TOPBAR */
+.topbar {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    padding: 16px 20px; border-radius: var(--radius-lg);
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+.welcome { font-size: 20px; font-weight: 700; }
+.topbarRight { display:flex; align-items:center; gap:10px; }
+.searchBox { width:240px; margin-top:0 !important; }
+.profileBtn {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--accent-grad);
+    border: 2px solid rgba(0,168,255,0.3);
+    color: white; font-size: 22px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; flex-shrink: 0; margin-top: 0;
+    box-shadow: 0 0 20px rgba(0,168,255,0.3);
+    transition: all 0.22s var(--ease);
+    font-family: 'Space Grotesk', sans-serif;
+}
+.profileBtn:hover { transform: scale(1.1); box-shadow: 0 0 32px rgba(0,168,255,0.5); }
+
+/* SETTINGS MODAL */
+.settOverlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.8);
+    align-items: center; justify-content: center;
+}
+.settOverlay.open { display: flex; }
+.settModal {
+    background: #0d1117;
+    border: 1px solid rgba(0,168,255,0.2);
+    border-radius: var(--radius-lg);
+    padding: 28px; width: 360px;
+    max-height: 88vh; overflow-y: auto;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.95);
+    position: relative;
+}
+.settModalHead {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+}
+.settModalHead span { font-size: 16px; font-weight: 700; }
+.settCloseBtn {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    color: var(--text-muted); width: 32px; height: 32px; border-radius: 8px;
+    font-size: 14px; padding: 0; margin: 0; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: all 0.15s var(--ease);
+}
+.settCloseBtn:hover { background: rgba(239,68,68,0.15); color: #f87171; transform: none; box-shadow: none; }
+
+.settLabel { font-size: 11px; color: var(--text-muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px; display: block; }
+
+/* PFP current preview in settings */
+.settPfpPreview {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(0,168,255,0.1);
+    border: 2px solid rgba(0,168,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 14px; transition: all 0.2s var(--ease);
+}
+/* PFP grid in settings */
+.settPfpGrid {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; margin-bottom: 4px;
+}
+.settPfpBtn {
+    width: 100%; aspect-ratio: 1;
+    background: rgba(255,255,255,0.04);
+    border: 2px solid var(--border);
+    border-radius: 10px; font-size: 20px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.16s var(--ease);
+    padding: 0; margin: 0;
+}
+.settPfpBtn:hover { background: rgba(0,168,255,0.1); border-color: rgba(0,168,255,0.35); transform: scale(1.12); box-shadow: none; }
+.settPfpBtn.selected { background: rgba(0,168,255,0.18); border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,168,255,0.2); }
+
+.settDivider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+.settRow { margin-bottom: 14px; }
+.settRow label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; letter-spacing: 0.8px; text-transform: uppercase; }
+.settRow input { margin-top: 0; }
+.showToggle {
+    background: none; border: none; color: var(--accent); font-size: 12px;
+    cursor: pointer; margin-top: 6px; padding: 0; font-weight: 500;
+    font-family: 'Space Grotesk', sans-serif; transition: opacity 0.15s;
+}
+.showToggle:hover { opacity: 0.7; transform: none; box-shadow: none; }
+.settSuccess { color: var(--success); font-size: 13px; margin-top: 8px; display: none; font-weight: 500; }
+
+/* TABS */
+.tabContent { display:none; }
+.tabContent.active { display:block; animation: fadeUp 0.3s var(--ease) both; }
+
+/* CARD GRID */
+.cardGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
+.card {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 20px;
+    transition: all 0.25s var(--ease); position: relative; overflow: hidden;
+}
+.card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background: var(--accent-grad); opacity:0; transition: opacity 0.25s var(--ease);
+}
+.card:hover { border-color: var(--border-glow); background: rgba(0,168,255,0.04); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.4); }
+.card:hover::before { opacity:1; }
+.cardTitle { font-size:18px; font-weight:700; margin-bottom:6px; }
+.requireText {
+    color: var(--accent); word-break:break-all; margin-bottom:16px;
+    font-family:'JetBrains Mono',monospace; font-size:13px;
+    background: rgba(0,168,255,0.06); padding: 8px 12px; border-radius: 8px;
+    border: 1px solid rgba(0,168,255,0.12);
+}
+.badge {
+    display:inline-flex; align-items:center; gap:5px;
+    background: rgba(123,95,255,0.12); color: #a78bfa;
+    font-size:11px; padding:3px 10px; border-radius:20px; margin-bottom:10px;
+    border: 1px solid rgba(123,95,255,0.2); font-weight:500;
+}
+
+/* INPUT PANELS */
+.inputGroup {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px; margin-bottom: 22px;
+}
+.inputGroup h2 { font-size:17px; font-weight:700; margin-bottom:4px; }
+.inviteBox {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px;
+}
+.inviteKeyBox {
+    background: rgba(0,168,255,0.06); border: 1px solid rgba(0,168,255,0.18);
+    padding: 16px 18px; border-radius: var(--radius-md); margin-top: 14px;
+    font-weight: 700; color: var(--accent); word-break:break-all;
+    font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 1px;
+}
+
+/* CHAT */
+.chatBox {
+    background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); display:flex; flex-direction:column; height: 520px; overflow:hidden;
+}
+.chatMessages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:10px; }
+.chatMsg { max-width:70%; padding:12px 16px; border-radius:16px; font-size:14px; line-height:1.55; animation: msgIn 0.2s var(--ease) both; }
+@keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+.chatMsg.mine { background: var(--accent-grad); align-self:flex-end; border-bottom-right-radius:4px; box-shadow: 0 4px 16px rgba(0,168,255,0.3); }
+.chatMsg.theirs { background: rgba(255,255,255,0.05); border: 1px solid var(--border); align-self:flex-start; border-bottom-left-radius:4px; }
+.chatMsg .msgUser { font-size:11px; opacity:0.65; margin-bottom:3px; font-weight:600; }
+.chatMsg .msgTime { font-size:10px; opacity:0.4; margin-top:4px; text-align:right; }
+.chatInputRow { display:flex; gap:10px; padding:14px 16px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+.chatInputRow input { margin-top:0; flex:1; }
+.chatInputRow button { margin-top:0; padding:12px 22px; white-space:nowrap; }
+
+/* INPUTS */
+input {
+    width:100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    color: var(--text); padding: 13px 16px; border-radius: var(--radius-sm);
+    margin-top: 12px; outline: none; font-family: 'Space Grotesk', sans-serif; font-size: 14px;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+input:focus { border-color: var(--border-glow); background: rgba(0,168,255,0.05); box-shadow: 0 0 0 3px rgba(0,168,255,0.1); }
+input::placeholder { color: var(--text-dim); }
+
+/* BUTTONS */
+button {
+    background: var(--accent-grad); border: none; color: white;
+    padding: 13px 20px; border-radius: var(--radius-sm); margin-top: 12px;
+    cursor: pointer; font-weight: 600; font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px; transition: all 0.22s var(--ease); position: relative; overflow: hidden;
+}
+button:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,168,255,0.35); }
+button:active { transform:translateY(0); }
+.rowBtns { display:flex; gap:10px; }
+.rowBtns button { flex:1; }
+.btnDanger { background: linear-gradient(135deg,#ef4444,#b91c1c) !important; }
+.btnDanger:hover { box-shadow: 0 8px 24px rgba(239,68,68,0.35) !important; }
+
+.status { margin-top:12px; color:#f87171; text-align:center; font-size:13px; font-weight:500; }
+.emptyMsg { color:var(--text-dim); padding:10px; font-size:14px; }
+
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:10px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(0,168,255,0.35); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <div class="logo">RequireHub</div>
+    <button class="navBtn active" id="navScripts">📦 Scripts</button>
+    <button class="navBtn" id="navChat">💬 Chat</button>
+    <button class="navBtn" id="navInvite">🔑 Invite System</button>
+    <button class="navBtn" id="navLogout" style="margin-top:20px">🚪 Logout</button>
+</div>
+
+<!-- LOGIN -->
+<div class="main" id="main">
+    <div class="loginBox" id="loginBox">
+        <div class="logo">RequireHub</div>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <input type="text" id="invite" placeholder="Invite Key">
+
+        <div id="pfpPickerWrap">
+            <span class="pfpPickerLabel">Choose your avatar</span>
+            <div class="pfpGrid" id="pfpGrid"></div>
+        </div>
+
+        <button id="signInBtn">Sign In</button>
+        <p style="text-align:center;margin-top:14px;font-size:13px;color:#555">
+            Already have an account? <a id="switchToLogin" href="#" style="color:#00a8ff;text-decoration:none">Log In</a>
+        </p>
+        <div class="status" id="status"></div>
+    </div>
+</div>
+
+<!-- MAIN PANEL -->
+<div class="panel" id="panel">
+    <div class="topbar">
+        <div class="welcome" id="welcomeMsg">Welcome back</div>
+        <div class="topbarRight">
+            <input class="searchBox" type="text" id="searchBar" placeholder="Search Scripts">
+            <button class="profileBtn" id="profileBtn">?</button>
+        </div>
+    </div>
+
+    <div class="tabContent active" id="tab-scripts">
+        <div class="inputGroup">
+            <h2>Add Require Script</h2>
+            <input type="text" id="scriptName" placeholder="Script Name">
+            <input type="text" id="requireID" placeholder="Require ID">
+            <button id="addScriptBtn">Add Script</button>
+        </div>
+        <div class="cardGrid" id="scriptList"></div>
+    </div>
+
+    <div class="tabContent" id="tab-chat">
+        <div class="chatBox">
+            <div class="chatMessages" id="chatMessages">
+                <div class="emptyMsg">No messages yet. Say hi! 👋</div>
+            </div>
+            <div class="chatInputRow">
+                <input type="text" id="chatInput" placeholder="Type a message...">
+                <button id="sendBtn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tabContent" id="tab-invite">
+        <div class="inviteBox">
+            <h2>Invite System</h2>
+            <p style="color:#888;margin-top:8px;font-size:13px;">Share this key with people you want to let in:</p>
+            <div class="inviteKeyBox" id="currentInvite">Loading...</div>
+            <button id="genInviteBtn">🔄 Generate New Key</button>
+            <p style="color:#555;font-size:12px;margin-top:8px;">⚠️ Generating a new key invalidates the old one.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="settOverlay" id="settOverlay">
+    <div class="settModal">
+        <div class="settModalHead">
+            <span>⚙️ Settings</span>
+            <button class="settCloseBtn" id="settCloseBtn">✕</button>
+        </div>
+
+        <span class="settLabel">Profile Picture</span>
+        <div class="settPfpPreview" id="settPfpPreview">?</div>
+        <div class="settPfpGrid" id="settPfpGrid"></div>
+
+        <div class="settDivider"></div>
+
+        <div class="settRow">
+            <label>Username</label>
+            <input type="text" id="settUsername" placeholder="New username">
+        </div>
+        <div class="settRow">
+            <label>Password</label>
+            <input type="password" id="settPassword">
+            <button class="showToggle" id="togglePassBtn">👁 Show Password</button>
+        </div>
+        <button id="saveSettingsBtn" style="width:100%;margin-top:12px">Save Changes</button>
+        <div class="settSuccess" id="settSuccess">✅ Saved!</div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+    getFirestore, collection, addDoc, deleteDoc, doc,
+    onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAA0dCH1oS0lifNXm_mthvj2zPZR_wM2-A",
+    authDomain: "requirehub-11adb.firebaseapp.com",
+    projectId: "requirehub-11adb",
+    storageBucket: "requirehub-11adb.firebasestorage.app",
+    messagingSenderId: "646151442388",
+    appId: "1:646151442388:web:d1ad16ff18672baf15d041"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+function setStatus(t) { document.getElementById("status").innerText = t; }
+
+// ── AVATARS ──
+const AVATARS = [
+    "🐱","🐶","🦊","🐺","🐻","🐼",
+    "🐸","🐵","🦁","🐯","🐨","🦝",
+    "🐙","🦋","🐲","🦄","🤖","👾",
+    "🧙","🧛","🥷","👻","🎭","⚡",
+    "🔥","🌊","🍀","🌸","💎","🚀"
+];
+
+// ── Signup pfp picker ──
+let signupPfp = AVATARS[0];
+
+function buildSignupGrid() {
+    const grid = document.getElementById("pfpGrid");
+    grid.innerHTML = "";
+    AVATARS.forEach(emoji => {
+        const btn = document.createElement("button");
+        btn.className = "pfpOption" + (emoji === signupPfp ? " selected" : "");
+        btn.textContent = emoji;
+        btn.type = "button";
+        btn.onclick = () => {
+            signupPfp = emoji;
+            grid.querySelectorAll(".pfpOption").forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+        };
+        grid.appendChild(btn);
+    });
+}
+buildSignupGrid();
+
+// ── Settings pfp picker ──
+let newPfp = null;
+
+function buildSettingsGrid() {
+    const current = localStorage.getItem("pfp") || "";
+    document.getElementById("settPfpPreview").textContent = current || "?";
+    newPfp = null;
+
+    const grid = document.getElementById("settPfpGrid");
+    grid.innerHTML = "";
+    AVATARS.forEach(emoji => {
+        const btn = document.createElement("button");
+        btn.className = "settPfpBtn" + (emoji === current ? " selected" : "");
+        btn.textContent = emoji;
+        btn.type = "button";
+        btn.onclick = () => {
+            newPfp = emoji;
+            grid.querySelectorAll(".settPfpBtn").forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+            document.getElementById("settPfpPreview").textContent = emoji;
+        };
+        grid.appendChild(btn);
+    });
+}
+
+// ── Apply pfp to profile button ──
+function applyPfp(emoji) {
+    const btn = document.getElementById("profileBtn");
+    if (emoji) {
+        btn.textContent = emoji;
+        btn.style.fontSize = "22px";
+        btn.style.background = "rgba(0,168,255,0.15)";
+    } else {
+        const user = localStorage.getItem("username") || "?";
+        btn.textContent = user.charAt(0).toUpperCase();
+        btn.style.fontSize = "16px";
+        btn.style.background = "";
+    }
+}
+
+// ── Settings modal open/close ──
+const overlay = document.getElementById("settOverlay");
+
+function openSettings() {
+    document.getElementById("settUsername").value = localStorage.getItem("username") || "";
+    document.getElementById("settPassword").value = "";
+    document.getElementById("settPassword").type = "password";
+    document.getElementById("togglePassBtn").textContent = "👁 Show Password";
+    buildSettingsGrid();
+    overlay.classList.add("open");
+}
+function closeSettings() {
+    overlay.classList.remove("open");
+}
+
+document.getElementById("profileBtn").addEventListener("click", openSettings);
+document.getElementById("settCloseBtn").addEventListener("click", closeSettings);
+overlay.addEventListener("click", e => { if (e.target === overlay) closeSettings(); });
+
+// ── Toggle password visibility ──
+document.getElementById("togglePassBtn").addEventListener("click", () => {
+    const inp = document.getElementById("settPassword");
+    const btn = document.getElementById("togglePassBtn");
+    if (inp.type === "password") { inp.type = "text"; btn.textContent = "🙈 Hide Password"; }
+    else { inp.type = "password"; btn.textContent = "👁 Show Password"; }
+});
+
+// ── Save settings ──
+document.getElementById("saveSettingsBtn").addEventListener("click", () => {
+    const newName = document.getElementById("settUsername").value.trim();
+    const newPass = document.getElementById("settPassword").value.trim();
+    if (newName) {
+        localStorage.setItem("username", newName);
+        document.getElementById("welcomeMsg").textContent = "Welcome back, " + newName;
+    }
+    if (newPass) localStorage.setItem("password", newPass);
+    if (newPfp) {
+        localStorage.setItem("pfp", newPfp);
+        applyPfp(newPfp);
+    }
+    const succ = document.getElementById("settSuccess");
+    succ.style.display = "block";
+    setTimeout(() => { succ.style.display = "none"; closeSettings(); }, 1500);
+});
+
+// ── Firebase ──
+async function getInviteKey() {
+    try {
+        const snap = await getDoc(doc(db, "config", "invite"));
+        if (snap.exists()) return snap.data().key;
+        await setDoc(doc(db, "config", "invite"), { key: "RH-DEMO2026KEY" });
+        return "RH-DEMO2026KEY";
+    } catch { return "RH-DEMO2026KEY"; }
+}
+
+// ── Sign In / Sign Up ──
+document.getElementById("signInBtn").addEventListener("click", async () => {
+    const user = document.getElementById("username").value.trim();
+    const pass = document.getElementById("password").value.trim();
+    const isLogin = document.getElementById("invite").style.display === "none";
+    if (!user || !pass) { setStatus("Fill all fields"); return; }
+    if (isLogin) {
+        if (user !== localStorage.getItem("username") || pass !== localStorage.getItem("password")) {
+            setStatus("Wrong username or password"); return;
+        }
+        localStorage.setItem("loggedIn", "true");
+        openPanel(); return;
+    }
+    const invite = document.getElementById("invite").value.trim();
+    if (!invite) { setStatus("Fill all fields"); return; }
+    setStatus("Signing in...");
+    try {
+        const validKey = await getInviteKey();
+        if (invite !== validKey && invite !== "RH-DEMO2026KEY") { setStatus("Wrong invite key"); return; }
+        localStorage.setItem("loggedIn", "true");
+        localStorage.setItem("username", user);
+        localStorage.setItem("password", pass);
+        localStorage.setItem("pfp", signupPfp);
+        openPanel();
+    } catch(err) { setStatus("Error: " + err.message); }
+});
+
+// ── Logout ──
+document.getElementById("navLogout").addEventListener("click", () => {
+    localStorage.removeItem("loggedIn");
+    location.reload();
+});
+
+// ── Switch login/signup ──
+document.getElementById("switchToLogin").addEventListener("click", e => {
+    e.preventDefault();
+    document.getElementById("invite").style.display = "none";
+    document.getElementById("pfpPickerWrap").style.display = "none";
+    document.getElementById("signInBtn").textContent = "Log In";
+    e.target.style.display = "none";
+    document.querySelector("#loginBox p").innerHTML = 'New here? <a id="switchToSignIn" href="#" style="color:#00a8ff;text-decoration:none">Sign In</a>';
+    document.getElementById("switchToSignIn").addEventListener("click", ev => {
+        ev.preventDefault();
+        document.getElementById("invite").style.display = "block";
+        document.getElementById("pfpPickerWrap").style.display = "block";
+        document.getElementById("signInBtn").textContent = "Sign In";
+        document.querySelector("#loginBox p").innerHTML = 'Already have an account? <a id="switchToLogin2" href="#" style="color:#00a8ff;text-decoration:none">Log In</a>';
+        document.getElementById("switchToLogin2").addEventListener("click", ev2 => {
+            ev2.preventDefault();
+            document.getElementById("invite").style.display = "none";
+            document.getElementById("pfpPickerWrap").style.display = "none";
+            document.getElementById("signInBtn").textContent = "Log In";
+            document.querySelector("#loginBox p").innerHTML = 'New here? <a id="switchToSignIn2" href="#" style="color:#00a8ff;text-decoration:none">Sign In</a>';
+        });
+    });
+});
+
+// ── Open panel ──
+async function openPanel() {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+    document.getElementById("sidebar").style.display = "block";
+    document.getElementById("main").style.marginLeft = "240px";
+    const user = localStorage.getItem("username") || "User";
+    document.getElementById("welcomeMsg").textContent = "Welcome back, " + user;
+    applyPfp(localStorage.getItem("pfp"));
+    const key = await getInviteKey();
+    document.getElementById("currentInvite").textContent = key;
+    startScripts();
+    startChat();
+}
+
+if (localStorage.getItem("loggedIn") === "true") openPanel();
+
+// ── Tabs ──
+function showTab(name) {
+    document.querySelectorAll(".tabContent").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".navBtn").forEach(b => b.classList.remove("active"));
+    document.getElementById("tab-" + name).classList.add("active");
+    document.getElementById("nav" + name.charAt(0).toUpperCase() + name.slice(1)).classList.add("active");
+}
+document.getElementById("navScripts").addEventListener("click", () => showTab("scripts"));
+document.getElementById("navChat").addEventListener("click", () => showTab("chat"));
+document.getElementById("navInvite").addEventListener("click", () => showTab("invite"));
+
+// ── Invite ──
+document.getElementById("genInviteBtn").addEventListener("click", async () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let key = "RH-";
+    for (let i = 0; i < 12; i++) key += chars[Math.floor(Math.random() * chars.length)];
+    await setDoc(doc(db, "config", "invite"), { key });
+    document.getElementById("currentInvite").textContent = key;
+});
+
+// ── Scripts ──
+document.getElementById("addScriptBtn").addEventListener("click", async () => {
+    const name = document.getElementById("scriptName").value.trim();
+    const id = document.getElementById("requireID").value.trim();
+    if (!name || !id) return;
+    await addDoc(collection(db, "scripts"), {
+        name, id,
+        owner: localStorage.getItem("username") || "unknown",
+        ownerPfp: localStorage.getItem("pfp") || "",
+        createdAt: serverTimestamp()
+    });
+    document.getElementById("scriptName").value = "";
+    document.getElementById("requireID").value = "";
+});
+
+document.getElementById("searchBar").addEventListener("keyup", renderScripts);
+
+let allScripts = [];
+function startScripts() {
+    const q = query(collection(db, "scripts"), orderBy("createdAt", "desc"));
+    onSnapshot(q, snap => {
+        allScripts = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+        renderScripts();
+    });
+}
+function renderScripts() {
+    const list = document.getElementById("scriptList");
+    const search = document.getElementById("searchBar").value.toLowerCase();
+    const me = localStorage.getItem("username") || "";
+    list.innerHTML = "";
+    const filtered = allScripts.filter(s =>
+        !search || s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search)
+    );
+    if (!filtered.length) { list.innerHTML = `<p class="emptyMsg">No scripts found.</p>`; return; }
+    filtered.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+            <div class="badge">${s.ownerPfp || ""} ${s.owner || "unknown"}</div>
+            <div class="cardTitle">${s.name}</div>
+            <div class="requireText">require(${s.id})</div>
+            <div class="rowBtns">
+                <button class="copyBtn">Copy</button>
+                ${s.owner === me ? `<button class="btnDanger deleteBtn">Delete</button>` : ""}
+            </div>`;
+        div.querySelector(".copyBtn").addEventListener("click", () => {
+            navigator.clipboard.writeText(`require(${s.id})`);
+            alert("Copied!");
+        });
+        if (s.owner === me) {
+            div.querySelector(".deleteBtn").addEventListener("click", async () => {
+                await deleteDoc(doc(db, "scripts", s.docId));
+            });
+        }
+        list.appendChild(div);
+    });
+}
+
+// ── Chat ──
+function startChat() {
+    const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
+    onSnapshot(q, snap => {
+        const box = document.getElementById("chatMessages");
+        const me = localStorage.getItem("username") || "";
+        box.innerHTML = "";
+        if (snap.empty) { box.innerHTML = `<div class="emptyMsg">No messages yet. Say hi! 👋</div>`; return; }
+        snap.forEach(d => {
+            const m = d.data();
+            const isMine = m.user === me;
+            const time = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }) : "";
+            const div = document.createElement("div");
+            div.className = "chatMsg " + (isMine ? "mine" : "theirs");
+            div.innerHTML = `${!isMine ? `<div class="msgUser">${m.pfp || ""} ${m.user}</div>` : ""}${m.text}<div class="msgTime">${time}</div>`;
+            box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+    });
+}
+
+async function sendMessage() {
+    const input = document.getElementById("chatInput");
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    await addDoc(collection(db, "messages"), {
+        text,
+        user: localStorage.getItem("username") || "unknown",
+        pfp: localStorage.getItem("pfp") || "",
+        createdAt: serverTimestamp()
+    });
+}
+document.getElementById("sendBtn").addEventListener("click", sendMessage);
+document.getElementById("chatInput").addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
+</script>
+</body>
+</html>
